@@ -39,7 +39,7 @@ Rules:
 }
 
 export async function runPlan(input: PlanInput, mode: RegenMode, previous?: Plan | null): Promise<Plan> {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new GatewayError(401, "AI is not configured.");
   const provider = createOpenAI({
     baseURL: "https://ai.gateway.lovable.dev/v1",
@@ -80,12 +80,14 @@ export async function runPlan(input: PlanInput, mode: RegenMode, previous?: Plan
 }
 
 function normalize(plan: Plan, duration: number): Plan {
-  const shots = [...plan.shots].sort((a, b) => a.start - b.start);
-  for (let i = 0; i < shots.length; i++) {
-    shots[i] = { ...shots[i], start: i === 0 ? 0 : shots[i - 1].end };
-    if (shots[i].end <= shots[i].start) shots[i].end = shots[i].start + 1;
-  }
-  if (shots.length) shots[shots.length - 1].end = duration;
+  const sorted = [...plan.shots].sort((a, b) => a.start - b.start);
+  let prevEnd = 0;
+  const shots = sorted.map((shot, i) => {
+    const start = i === 0 ? 0 : prevEnd;
+    const end = i === sorted.length - 1 ? duration : Math.max(shot.end, start + 1);
+    prevEnd = end;
+    return { ...shot, start, end };
+  });
   const hashtags = plan.caption.hashtags
     .map((h) => (h.startsWith("#") ? h : `#${h.replace(/\s+/g, "")}`))
     .slice(0, 12);
