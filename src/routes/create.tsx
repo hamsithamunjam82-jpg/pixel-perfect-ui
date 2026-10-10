@@ -99,7 +99,7 @@ function CreatePage() {
 
   function differentAesthetic() {
     const options = AESTHETICS.filter((a) => a !== form.aesthetic);
-    const pick = options[Math.floor(Math.random() * options.length)];
+    const pick = options[Math.floor(Math.random() * options.length)] ?? AESTHETICS[0];
     const next = { ...form, aesthetic: pick };
     setForm(next);
     toast(`Trying a ${pick} vibe…`);
